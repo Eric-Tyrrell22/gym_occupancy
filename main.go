@@ -16,7 +16,7 @@ type MyEvent struct {
 
 
 type Response struct {
-    Count string `json:"count"`
+  Count string `json:"count"`
 }
 
 func getOccupancy() ( int, error ){
