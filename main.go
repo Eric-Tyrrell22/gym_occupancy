@@ -1,13 +1,12 @@
 package main
 
 import (
-  "context"
   "errors"
   "io"
   "regexp"
   "strconv"
-  "github.com/aws/aws-lambda-go/lambda"
   "net/http"
+  "fmt"
 )
 
 type MyEvent struct {
@@ -19,23 +18,26 @@ type Response struct {
   Count string `json:"count"`
 }
 
-func getOccupancy() ( int, error ){
+func getOccupancy() ( int, int, error ){
+  scbCount, ptmCount := -1, -1
   resp, err := http.Get("https://portal.rockgympro.com/portal/public/8490bc5e774d0034d09420df23a224b9/occupancy?=&iframeid=occupancyCounter&fId=")
   if err != nil {
-    return -1, err
+    return ptmCount, scbCount, err
   }
   defer resp.Body.Close()
 
   body, err := io.ReadAll(resp.Body)
   if err != nil {
-    return -1, err
+    return ptmCount, scbCount, err
   }
 
   // Dumb but works
   ptmRegex, err := regexp.Compile(`'PTM' : \{\s*'capacity' : \d+,\s*'count' : (\d+),`)
+  scbRegex, err := regexp.Compile(`'SCB' : \{\s*'capacity' : \d+,\s*'count' : (\d+),`)
   if err != nil {
-    return -1, err
+    return ptmCount, scbCount, err
   }
+
 
   matches := ptmRegex.FindStringSubmatch(string(body))
   if len(matches) > 1 {
@@ -43,25 +45,30 @@ func getOccupancy() ( int, error ){
 
     i, err := strconv.Atoi(count)
     if err != nil  {
-      return -1, err
+      return ptmCount, scbCount, err
     }
 
-    return i, nil
+    ptmCount = i;
   }
 
-  return -1, errors.New("no count found in response")
-}
+  matches = scbRegex.FindStringSubmatch(string(body))
+  if len(matches) > 1 {
+    count := matches[1]
 
-func HandleRequest(ctx context.Context) (Response, error) {
-  count, err := getOccupancy()
-  if err != nil {
-    return Response{}, err
+    i, err := strconv.Atoi(count)
+    if err != nil  {
+      return ptmCount, scbCount, err
+    }
+
+    scbCount = i;
   }
 
-  return Response{Count: strconv.Itoa(count) }, nil
+  return ptmCount, scbCount, errors.New("no count found in response")
 }
 
 func main() {
-  lambda.Start(HandleRequest)
+  ptmCount, scbCount, _:= getOccupancy()
+  fmt.Printf("Portsmouth occupancy: %d\n", ptmCount)
+  fmt.Printf("Scarborough occupancy: %d\n", scbCount)
 }
 
