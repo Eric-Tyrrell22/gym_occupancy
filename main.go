@@ -9,15 +9,6 @@ import (
   "fmt"
 )
 
-type MyEvent struct {
-  Name string `json:"name"`
-}
-
-
-type Response struct {
-  Count string `json:"count"`
-}
-
 func getOccupancy() ( int, int, error ){
   scbCount, ptmCount := -1, -1
   resp, err := http.Get("https://portal.rockgympro.com/portal/public/8490bc5e774d0034d09420df23a224b9/occupancy?=&iframeid=occupancyCounter&fId=")
@@ -34,10 +25,6 @@ func getOccupancy() ( int, int, error ){
   // Dumb but works
   ptmRegex, err := regexp.Compile(`'PTM' : \{\s*'capacity' : \d+,\s*'count' : (\d+),`)
   scbRegex, err := regexp.Compile(`'SCB' : \{\s*'capacity' : \d+,\s*'count' : (\d+),`)
-  if err != nil {
-    return ptmCount, scbCount, err
-  }
-
 
   matches := ptmRegex.FindStringSubmatch(string(body))
   if len(matches) > 1 {
