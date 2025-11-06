@@ -1,5 +1,5 @@
 module gym_occupancy
 
-go 1.21.3
+go 1.24.0
 
-require github.com/aws/aws-lambda-go v1.46.0 // indirect
+require github.com/mattn/go-sqlite3 v1.14.32
